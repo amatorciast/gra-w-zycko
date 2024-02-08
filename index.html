@@ -137,16 +137,20 @@
 			z += 1;
 
 			CellArray = [];
-			for (var i = 0; i < x; i++) {
-				CellArray[i] = [];
-				for (var j = 0; j < y; j++) {
-					CellArray[i][j] = [];
-					for (var l = 0; l < z; l++) {
-						SpawnCell(blackFrame, i * CellSize, j * CellSize, l * CellSize, false);
-						CellArray[i][j][l] = { alive: false, neighbors: 0 };
+			function makeGrid() {
+				for (var i = 0; i < x; i++) {
+					CellArray[i] = [];
+					for (var j = 0; j < y; j++) {
+						CellArray[i][j] = [];
+						for (var l = 0; l < z; l++) {
+							SpawnCell(blackFrame, i * CellSize, j * CellSize, l * CellSize, false);
+							CellArray[i][j][l] = { alive: false, neighbors: 0 };
+						}
 					}
 				}
 			}
+			makeGrid();
+			
 
 			whiteX = x * CellSize / 2;
 			whiteY = y * CellSize / 2;
