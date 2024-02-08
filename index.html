@@ -142,12 +142,20 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 		var y = 10;
 		var z = 10;
 		
+		function removeGrid() {
+			while (GameBoard.children.length > 0) {
+				var cell = GameBoard.children[0];
+				GameBoard.remove(cell);
+			}
+		}
+		
 		function boardbig() {
 			x += 1;
 			y += 1;
 			z += 1;
-
+			removeGrid();
 			CellArray = [];
+
 			for (var i = 0; i < x; i++) {
 				CellArray[i] = [];
 				for (var j = 0; j < y; j++) {
@@ -169,7 +177,7 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 				x -= 1;
 				y -= 1;
 				z -= 1;
-
+				removeGrid();
 				CellArray = [];
 				for (var i = 0; i < x; i++) {
 					CellArray[i] = [];
