@@ -95,7 +95,7 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 		}
 		function startGame() {
 			if (!timer) {
-				playBackgroundAudio()
+				playBackgroundAudio();
 				timer = setInterval(function () {
 				logic();
 				renderer.render(scene, camera);
@@ -104,7 +104,7 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 		}
 
 		function stopGame() {
-			backgroundAudio.pause();
+			pauseBackgroundAudio();
 			clearInterval(timer);
 			timer = null;
 		}
