@@ -95,7 +95,6 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 		}
 		function startGame() {
 			if (!timer) {
-				playBackgroundAudio();
 				timer = setInterval(function () {
 				logic();
 				renderer.render(scene, camera);
@@ -104,7 +103,7 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 		}
 
 		function stopGame() {
-			pauseBackgroundAudio();
+			
 			clearInterval(timer);
 			timer = null;
 		}
@@ -446,12 +445,14 @@ Szybciej znajdź to, czego szukasz … Strona główna to nowa strona docelowa, 
 			whiteCube.position.z = whiteZ;
 			
 			if (playing) {
+				playBackgroundAudio();
 				if (!timer) {
 					timer = setInterval(function () {
 						logic();
 					}, time);
 				}
 			} else {
+				pauseBackgroundAudio();
 				clearInterval(timer);
 				timer = null;
 			}
