@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no, maximum-scale=1, minimum-scale=1">
+    <title>Gra w żyćko</title>
+	 <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+	<audio id="backgroundAudio" loop>
+    <source src="BeepBox-Song.mp3" type="audio/mp3">
+	</audio>
+	<div id="ui-container">
+	<h1>Welcome to GRA W ŻYĆKO!</h1>
+    <h2>Use "w,a,s,d,e,q" keys to navigate. Press 'Space' to add a cell. You are advised to do so when the game is not running, but it is not forbidden. Ah, you can also move your camera with arrows and mouse scroll. If you want to begin again, just refresh the page.</h2>
+	<p>I just wanted to say, have a great day. You deserve it. You are amazing. I wish you delicious meals, a reasonable length of sleep and success in the struggles you undertake.</p>
+	<button onclick="startstop()">start/stop</button>
+    <button onclick="increasetime()">slower...</button>
+    <button onclick="decreasetime()">faster!</button>
+	<input type="number" id="minalive" placeholder="min to KEEP alive (def 2)">
+	<input type="number" id="maxalive" placeholder="max to KEEP alive (def 3)">
+	<input type="number" id="mindead" placeholder="min to MAKE alive (def 3)">
+	<input type="number" id="maxdead" placeholder="max to MAKE alive (def 3)">
+    <button onclick="newrules()">confirm new rules</button>
+	<button onclick="boardbig()">bigger board!</button>
+	<button onclick="boardsmall()">smaller board...</button>
+	</div>
+    <script>
+        // Your Three.js code goes here
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var renderer = new THREE.WebGLRenderer();
+		
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor("lightgray");
+        document.body.appendChild(renderer.domElement);
+		
+		var CellSize = 0.5;
+
+        var innerCell = new THREE.BoxGeometry(CellSize*0.9, CellSize*0.9, CellSize*0.9);
+		var outerCell = new THREE.BoxGeometry(CellSize, CellSize, CellSize);
+        var darkgreen = new THREE.MeshBasicMaterial({ 
+			color: "darkgreen"
+		});
+		var blackFrame = new THREE.MeshBasicMaterial({ 
+			color: "black",
+			wireframe: true,
+			transparent: true,
+			opacity: 0.015
+		});
+		var whiteVisible = new THREE.MeshBasicMaterial({
+			color: "white",
+			depthTest: false,
+			depthWrite: false
+		});
+		var transparent = new THREE.MeshBasicMaterial({
+			color: "white",
+			transparent: true,
+			opacity: 0.1
+		});
+		
+		depthTest = true;
+		depthWrite = true;
+
+        
+		
+		function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+		
+		
+		var backgroundAudio = document.getElementById('backgroundAudio');
+		function playBackgroundAudio() {
+			backgroundAudio.play();
+		}
+
+		function pauseBackgroundAudio() {
+			backgroundAudio.pause();
+		}
+		var playing = false;
+		function startstop() {
+			playing = !playing;
+		}
+		function startGame() {
+			if (!timer) {
+				playBackgroundAudio()
+				timer = setInterval(function () {
+				logic();
+				renderer.render(scene, camera);
+				}, time);
+			}
+		}
+
+		function stopGame() {
+			backgroundAudio.pause();
+			clearInterval(timer);
+			timer = null;
+		}
+		
+		
+		var time = 500;
+		function increasetime() {
+			stopGame();
+			time += 100;
+			startGame();
+		}
+
+		function decreasetime() {
+			if (time >= 100) {
+				stopGame();
+				time -= 100;
+				startGame();
+			}
+		}
+		var aliveToLiveMin = 2;
+		var aliveToLiveMax = 3;
+		var deadToLiveMin = 3;
+		var deadToLiveMax = 3;
+		
+		function newrules() {
+            stopGame();
+            aliveToLiveMin = document.getElementById('minalive').value;
+            aliveToLiveMax = document.getElementById('maxalive').value;
+			deadToLiveMin = document.getElementById('mindead').value;
+			deadToLiveMax = document.getElementById('maxdead').value;
+            startGame();
+        }
+		
+		var x = 10;
+		var y = 10;
+		var z = 10;
+		
+		function boardbig() {
+			x += 1;
+			y += 1;
+			z += 1;
+
+			CellArray = [];
+			for (var i = 0; i < x; i++) {
+				CellArray[i] = [];
+				for (var j = 0; j < y; j++) {
+					CellArray[i][j] = [];
+					for (var l = 0; l < z; l++) {
+						SpawnCell(blackFrame, i * CellSize, j * CellSize, l * CellSize, false);
+						CellArray[i][j][l] = { alive: false, neighbors: 0 };
+					}
+				}
+			}
+
+			whiteX = x * CellSize / 2;
+			whiteY = y * CellSize / 2;
+			whiteZ = z * CellSize / 2;
+		}
+
+		function boardsmall() {
+			if (x > 1 && y > 1 && z > 1) {
+				x -= 1;
+				y -= 1;
+				z -= 1;
+
+				CellArray = [];
+				for (var i = 0; i < x; i++) {
+					CellArray[i] = [];
+					for (var j = 0; j < y; j++) {
+						CellArray[i][j] = [];
+						for (var l = 0; l < z; l++) {
+							SpawnCell(blackFrame, i * CellSize, j * CellSize, l * CellSize, false);
+							CellArray[i][j][l] = { alive: false, neighbors: 0 };
+						}
+					}
+				}
+
+				whiteX = x * CellSize / 2;
+				whiteY = y * CellSize / 2;
+				whiteZ = z * CellSize / 2;
+			}
+		}
+
+		
+		
+		var whiteCube = new THREE.Mesh(outerCell, whiteVisible);
+		whiteCube.scale.set(0.5, 0.5, 0.5);
+		whiteCube.renderOrder = 10;
+		scene.add(whiteCube);
+		
+		function SpawnCell(material, posX, posY, posZ, playable) {
+			var Cell = new THREE.Mesh(outerCell, material);
+			Cell.position.x = posX;
+			Cell.position.y = posY;
+			Cell.position.z = posZ;
+			if (playable) {Cells.add(Cell);}
+			else {GameBoard.add(Cell);}
+			
+		}
+		
+		function clamp(value, min, max) {
+			return Math.min(Math.max(value, min), max);
+		}
+		
+		
+		
+		
+		
+		var whiteX = x*CellSize/2;
+		var whiteY = y*CellSize/2;
+		var whiteZ = z*CellSize/2;
+		
+		
+		var Cells = new THREE.Group();
+		var GameBoard = new THREE.Group();
+		scene.add(Cells);
+		scene.add(GameBoard);
+
+		var CellArray = [];
+			for (var i = 0; i < x; i++) {
+				CellArray[i] = [];
+				for (var j = 0; j < y; j++) {
+					CellArray[i][j] = [];
+					for (var l = 0; l < z; l++) {
+						SpawnCell(blackFrame, i * CellSize, j * CellSize, l * CellSize, false);
+						CellArray[i][j][l] = { alive: false, neighbors: 0 };
+					}
+				}
+			}
+
+
+		
+		camera.position.z = (z*CellSize)*2;
+		camera.position.x = (x*CellSize)/2;
+		camera.position.y = (y*CellSize)/2;
+		
+		scene.fog = new THREE.Fog("white", 0, camera.position.z*3); // (color, near, far)
+		
+		
+		var keys = {};
+		
+
+        function handleKeyDown(event) {
+            keys[event.key] = true;
+			
+			if(keys['e']) {
+				whiteZ-=CellSize;
+				whiteZ = clamp(whiteZ, 0, (z-1)*CellSize);
+			}
+			if(keys['q']) {
+				whiteZ+=CellSize;
+				whiteZ = clamp(whiteZ, 0, (z-1)*CellSize);
+			}
+			if(keys['a']) {
+				whiteX-=CellSize;
+				whiteX = clamp(whiteX, 0, (x-1)*CellSize);
+			}
+			if(keys['d']) {
+				whiteX+=CellSize;
+				whiteX = clamp(whiteX, 0, (x-1)*CellSize);
+			}
+			if(keys['w']) {
+				whiteY+=CellSize;
+				whiteY = clamp(whiteY, 0, (y-1)*CellSize);
+			}
+			if(keys['s']) {
+				whiteY-=CellSize;
+				whiteY = clamp(whiteY, 0, (y-1)*CellSize);
+			}
+			
+			if (event.key === " ") {
+				SpawnCell(darkgreen, whiteX, whiteY, whiteZ, true);
+			}
+
+        }
+
+        function handleKeyUp(event) {
+            keys[event.key] = false;
+
+
+        }
+		
+		function handleWheel(event) {
+			if (event.deltaY > 0) {
+				camera.position.z += 0.5;
+			} else {
+				camera.position.z -= 0.5;
+			}
+		}
+
+
+
+		
+		
+		var timer;
+		
+		
+		
+        document.addEventListener('keydown', handleKeyDown, false);
+        document.addEventListener('keyup', handleKeyUp, false);
+		document.addEventListener('wheel', handleWheel);
+		
+		function isCellInGroup(px, py, pz) {
+			for (var i = 0; i < Cells.children.length; i++) {
+				var child = Cells.children[i];
+				if (
+					child.position.x === px &&
+					child.position.y === py &&
+					child.position.z === pz
+				) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		function removeAllCells() {
+			while (Cells.children.length > 0) {
+				var cell = Cells.children[0];
+				Cells.remove(cell);
+			}
+		}
+		
+		function settingTheTable() {
+			for (var i = 0; i < x; i++) {
+				for (var j = 0; j < y; j++) {
+					for (var l = 0; l < z; l++) {
+						if(isCellInGroup(i*CellSize,j*CellSize,l*CellSize)) {CellArray[i][j][l].alive = true;}
+					}
+				}
+			}
+		}
+		
+		function clearCellArray() {
+			for (var i = 0; i < x; i++) {
+				for (var j = 0; j < y; j++) {
+					for (var l = 0; l < z; l++) {
+						CellArray[i][j][l].alive = false;
+						CellArray[i][j][l].neighbors = 0;
+					}
+				}
+			}
+		}
+			
+		
+		
+		
+		function logic() {
+			settingTheTable();
+			removeAllCells();
+			var newGen = []
+			for (var i = 0; i < x; i++) {
+				newGen[i] = [];
+				for (var j = 0; j < y; j++) {
+					newGen[i][j] = [];
+					for (var l = 0; l < z; l++) {
+						newGen[i][j][l] = false;
+						if(CellArray[i][j][l].alive) {
+							for (var newI = -1; newI <= 1; newI++) {
+								for (var newJ = -1; newJ <= 1; newJ++) {
+									for (var newL = -1; newL <= 1; newL++) {
+										if (
+                                    typeof CellArray[i + newI] !== 'undefined' &&
+                                    typeof CellArray[i + newI][j + newJ] !== 'undefined' &&
+                                    typeof CellArray[i + newI][j + newJ][l + newL] !== 'undefined' &&
+									!(newI == 0 && newJ == 0 && newL == 0)
+                                ) {
+											CellArray[i+newI][j+newJ][l+newL].neighbors += 1;
+										}
+										
+									}
+								}
+							}
+						}
+
+						}
+					}
+				}
+				
+				for (var i = 0; i < x; i++) {
+					for (var j = 0; j < y; j++) {
+						for (var l = 0; l < z; l++) {
+							if(CellArray[i][j][l].alive) {
+								if(CellArray[i][j][l].neighbors<=aliveToLiveMax && CellArray[i][j][l].neighbors>=aliveToLiveMin) {
+								newGen[i][j][l] = true;
+								}
+							}
+							if(!CellArray[i][j][l].alive) {
+								if(CellArray[i][j][l].neighbors<=deadToLiveMax && CellArray[i][j][l].neighbors>=deadToLiveMin) {
+								newGen[i][j][l] = true;
+								}
+							}
+						}
+					}	
+				}
+				clearCellArray();
+				for (var i = 0; i < x; i++) {
+					for (var j = 0; j < y; j++) {
+						for (var l = 0; l < z; l++) {
+							if(newGen[i][j][l]) {
+								SpawnCell(darkgreen, i*CellSize, j*CellSize, l*CellSize, true);
+								CellArray[i][j][l].alive = true;
+								CellArray[i][j][l].neighbors = 0;
+							}
+						}
+					}
+				}
+				
+				
+			
+		}
+
+        var animate = function () {
+            requestAnimationFrame(animate);
+			
+			if (keys['ArrowUp']) {
+                camera.position.y += 0.1;
+            }
+            if (keys['ArrowDown']) {
+                camera.position.y -= 0.1;
+            }
+            if (keys['ArrowLeft']) {
+                camera.position.x -= 0.1;
+            }
+            if (keys['ArrowRight']) {
+                camera.position.x += 0.1;
+            }
+			
+			whiteCube.position.x = whiteX;
+			whiteCube.position.y = whiteY;
+			whiteCube.position.z = whiteZ;
+			
+			if (playing) {
+				if (!timer) {
+					timer = setInterval(function () {
+						logic();
+					}, time);
+				}
+			} else {
+				clearInterval(timer);
+				timer = null;
+			}
+			
+			
+
+
+            
+
+            renderer.render(scene, camera);
+        };
+
+        animate();
+    </script>
+</body>
+</html>
