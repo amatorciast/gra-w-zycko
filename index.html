@@ -14,9 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-	<audio id="backgroundAudio" loop>
-    <source src="BeepBox-Song.mp3" type="audio/mp3">
-	</audio>
+	
 	<div id="ui-container">
 	<h1>Welcome to GRA W ŻYĆKO!</h1>
     <h2>Use "w,a,s,d,e,q" keys to navigate. Press 'Space' to add a cell. You are advised to do so when the game is not running, but it is not forbidden. Ah, you can also move your camera with arrows and mouse scroll. If you want to begin again, just refresh the page.</h2>
@@ -80,14 +78,7 @@
         window.addEventListener('resize', onWindowResize);
 		
 		
-		var backgroundAudio = document.getElementById('backgroundAudio');
-		function playBackgroundAudio() {
-			backgroundAudio.play();
-		}
-
-		function pauseBackgroundAudio() {
-			backgroundAudio.pause();
-		}
+		
 		var playing = false;
 		function startstop() {
 			playing = !playing;
@@ -95,7 +86,6 @@
 	    	var timer;
 		function startGame() {
 			if (!timer) {
-				playBackgroundAudio()
 				timer = setInterval(function () {
 				logic();
 				renderer.render(scene, camera);
@@ -104,7 +94,6 @@
 		}
 
 		function stopGame() {
-			backgroundAudio.pause();
 			clearInterval(timer);
 			timer = null;
 		}
